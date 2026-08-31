@@ -1,0 +1,28 @@
+meta:
+  name: BIOSCI 504
+
+color:
+  palette:
+    city-of-hope-blue: "#177BFB"
+    city-of-hope-blue-dark: "#0757A8"
+    ink: "#172235"
+    quiet-blue: "#EEF6FF"
+    rule-blue: "#B8D8FA"
+  foreground: ink
+  background: "#FFFFFF"
+  primary: city-of-hope-blue-dark
+  secondary: city-of-hope-blue
+
+typography:
+  base:
+    family: system-ui
+  headings:
+    family: system-ui
+    weight: 600
+    color: ink
+  monospace:
+    family: monospace
+  link:
+    color: city-of-hope-blue-dark
+    decoration: underline
+

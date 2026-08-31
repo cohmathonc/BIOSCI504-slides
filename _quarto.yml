@@ -1,0 +1,21 @@
+project:
+  type: website
+  output-dir: _site
+  render:
+    - index.qmd
+    - lecture-2.qmd
+
+website:
+  title: "BIOSCI 504"
+  navbar:
+    left:
+      - href: lecture-2.qmd
+        text: "Lecture 2"
+
+format:
+  html:
+    theme:
+      - cosmo
+      - brand
+    toc: true
+

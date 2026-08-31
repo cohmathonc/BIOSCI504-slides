@@ -1,0 +1,9 @@
+---
+title: "BIOSCI 504"
+subtitle: "Course presentations"
+---
+
+## Day 2
+
+- [Lecture 2: Working with R and RStudio](lecture-2.qmd)
+
