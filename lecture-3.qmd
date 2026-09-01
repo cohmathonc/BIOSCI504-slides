@@ -1,6 +1,6 @@
 ---
-title: "From experiment to trustworthy comparison"
-subtitle: "BIOSCI 504 · Day 2"
+title: "Working with experimental data in R"
+subtitle: "Tables, transformations, and comparisons"
 author: "Denis O'Meally"
 institute: "City of Hope"
 format:
@@ -20,7 +20,7 @@ format:
     margin: 0.08
     code-overflow: wrap
     embed-resources: true
-    footer: "BIOSCI 504 · From experiment to trustworthy comparison"
+    footer: "BIOSCI 504 · Working with experimental data in R"
 execute:
   warning: false
   message: false
@@ -54,6 +54,27 @@ illustrative_outcome_plot <- ggplot(
     caption = "Illustration only — not mouse_trial results"
   ) +
   theme_minimal(base_size = 24)
+
+paired_measurements <- tribble(
+  ~mouse, ~measurement, ~weight_g,
+  "Mouse A", "Baseline", 20,
+  "Mouse A", "Final", 25,
+  "Mouse B", "Baseline", 24,
+  "Mouse B", "Final", 25
+) |>
+  mutate(measurement = factor(measurement, levels = c("Baseline", "Final")))
+
+paired_measurement_plot <- ggplot(
+  paired_measurements,
+  aes(x = measurement, y = weight_g, group = mouse, color = mouse)
+) +
+  geom_line(linewidth = 2) +
+  geom_point(size = 6) +
+  scale_color_manual(values = c("Mouse A" = "#177BFB", "Mouse B" = "#0757A8")) +
+  scale_y_continuous(limits = c(18, 27), breaks = seq(18, 26, by = 2)) +
+  labs(x = NULL, y = "Weight (g)", color = NULL) +
+  theme_minimal(base_size = 24) +
+  theme(legend.position = "bottom")
 ```
 
 You should be able to:
@@ -65,50 +86,75 @@ You should be able to:
 5. distinguish a result, its interpretation and the evidence supporting it.
 
 ::: {.notes}
-Lecture 3 prepares the reasoning needed for the tabular-comparison exercise. It
-does not provide the completed treatment comparison. Canonical table outputs
-were built from `BIOSCI504` commit
-`3730f8b813668f317689ac56fabb299c9a1b072e`.
-
-The sequence adapts current Carpentries teaching moves: predict before reveal,
-identify the observational unit, inspect with a purpose, construct a
-transformation visibly, inspect the new state, and retain individual
-observations beside summaries.
-
-These are reasoning outcomes. Syntax supports them but is not the main target.
-
-Ask: If R executes every line without an error, which of these outcomes has
-already been established? Answer: none.
+- Purpose: prepare the reasoning used in the exercise without completing it.
+- Ask: If every line runs, which outcome is already established?
+- Answer: none; execution is not verification.
+- Build source: `BIOSCI504` commit `3730f8b813668f317689ac56fabb299c9a1b072e`.
 :::
 
-## A recovery study
+## How this session works
 
 ```text
-48 mice
-   │
-   ├── baseline weight
-   │
-   ├── control or nutritional treatment
-   │
-   └── final weight
-
-sex · cage · experimental batch
+LOOK → PREDICT → TRY IN RSTUDIO → DISCUSS → REVEAL
 ```
 
-Did treated mice gain more weight than control mice?
+- The slides contain the code and precomputed output.
+- Short pauses are marked **Now in RStudio**.
+- Work with your neighbour; the TAs will circulate around the room.
+
+::: {.notes}
+- You present from this deck; no instructor RStudio window is needed.
+- Students use RStudio only at the marked pauses.
+- Advance to the following slide for the precomputed answer.
+:::
+
+## The mouse experiment
+
+:::: {.columns}
+
+::: {.column width="29%"}
+### Before
+
+**48 mice**
+
+Baseline weight
+:::
+
+::: {.column width="6%"}
+### →
+:::
+
+::: {.column width="30%"}
+### Assigned group
+
+Control
+
+Nutritional treatment
+:::
+
+::: {.column width="6%"}
+### →
+:::
+
+::: {.column width="29%"}
+### After
+
+Final weight
+:::
+
+::::
+
+`sex` · `cage` · `batch` provide experimental context for each mouse.
+
+**Did treated mice gain more weight than control mice?**
 
 Treatment varies within cages; treatment and cage are not the same grouping.
 
 ::: {.notes}
-Describe the experiment before showing the table. The study includes biological
-units, an assigned treatment, paired measurements and context that may
-contribute to variation.
-
-Treatment and control mice occur within cages. That structure is why cage is
-experimental context rather than a substitute label for treatment.
-
-Do not discuss the observed treatment result. The question is the starting
-point, not a conclusion.
+- Context: 48 mice, one assigned group, weights before and after treatment.
+- Clarify: treatment varies within cages; cage is context, not the treatment group.
+- Ask: What information must the table retain to answer the question?
+- Do not discuss the observed treatment result.
 :::
 
 ## Before seeing the table
@@ -121,12 +167,33 @@ Predict:
 - Where should the unit of weight be recorded?
 
 ::: {.notes}
-Take answers before revealing the data. This follows the Carpentries practice
-of connecting a data representation to its domain before introducing
-operations.
+- Take answers before advancing.
+- Listen for mouse ID, treatment, baseline weight and final weight.
+- Accept sex, cage and batch as useful experimental context.
+:::
 
-Expected ideas include mouse ID, treatment, baseline and final weight. Sex,
-cage and batch may emerge as useful experimental context.
+## Before seeing the table
+
+Predict:
+
+- What should one row represent?
+- Which columns are needed?
+- Which column should identify a mouse?
+- Where should the unit of weight be recorded?
+
+::: {.callout-note appearance="simple" icon=false}
+
+| One row | Identifier | Assigned group | Measurements | Context |
+|---|---|---|---|---|
+| one mouse | `mouse_id` | `treatment` | baseline and final weight | sex, cage, batch |
+
+One value per cell. Units belong in metadata or the column name.
+:::
+
+::: {.notes}
+- Reveal this as a defensible answer, not the only imaginable layout.
+- Takeaway: table structure should preserve experimental structure.
+- Transition: inspect the actual representation.
 :::
 
 ## Four rows from the real table {.smaller}
@@ -149,12 +216,9 @@ mouse_trial |>
 ```
 
 ::: {.notes}
-This is a genuine sample from `mouse_trial`, not a mock-up. Ask learners to
-locate the identifier, grouping variable, measurements and experimental
-context.
-
-A preview establishes that these values exist. It does not establish the size,
-completeness, uniqueness or plausible range of the whole table.
+- This is a genuine preview from `mouse_trial`.
+- Ask learners to locate the identifier, group, measurements and context.
+- A preview does not establish completeness, uniqueness or plausible ranges.
 :::
 
 ## What does one row represent?
@@ -167,11 +231,30 @@ Choose one:
 4. one treatment group.
 
 ::: {.notes}
-Answer: one mouse. Baseline and final measurements occupy different columns on
-the same mouse row.
+- Ask for a show of hands before advancing.
+- Do not resolve the choice on this slide.
+:::
 
-This question determines how identifiers, duplicates, sample size and within-
-mouse change should be interpreted. Return to it throughout the lecture.
+## What does one row represent?
+
+Choose one:
+
+1. one weight measurement;
+2. one mouse;
+3. one cage;
+4. one treatment group.
+
+::: {.callout-note appearance="simple" icon=false}
+
+**One mouse.**
+
+The two measurements occupy different columns on the same mouse row.
+:::
+
+::: {.notes}
+- Answer: one mouse.
+- Takeaway: identifiers, duplicates, sample size and change depend on this choice.
+- Return to the observational unit after transformations and summaries.
 :::
 
 ## Rows, columns and cells
@@ -186,10 +269,9 @@ mouse change should be interpreted. Return to it throughout the lecture.
 One value per cell; units belong in metadata or the column name.
 
 ::: {.notes}
-Adapted from Data Carpentry's spreadsheet-ecology tidy-table rules: columns are
-variables, rows are observations and cells contain values.
-
-Source: https://datacarpentry.github.io/spreadsheet-ecology-lesson/01-format-data.html
+- Connect the vocabulary directly to the displayed table.
+- Takeaway: rows are observations, columns are variables, cells are values.
+- Source: https://datacarpentry.github.io/spreadsheet-ecology-lesson/01-format-data.html
 :::
 
 ## Variables have different roles
@@ -204,11 +286,9 @@ Source: https://datacarpentry.github.io/spreadsheet-ecology-lesson/01-format-dat
 The role follows from the experiment, not merely the R storage type.
 
 ::: {.notes}
-Connect to Lecture 2: character and double describe storage. Identifier,
-treatment, context and measurement describe scientific roles.
-
-`treatment`, `sex`, `cage` and `batch` are categorical variables even though
-their values are stored as character strings. Weight is continuous.
+- Connect to Lecture 2: character and double describe storage.
+- Treatment, sex, cage and batch are categorical variables stored as text.
+- Weight is a continuous measurement.
 :::
 
 ## The dictionary is part of the data {.smaller}
@@ -228,12 +308,9 @@ course_data_dictionary |>
 ```
 
 ::: {.notes}
-A column name is not a complete definition. The dictionary records intended
-meaning, units and permitted categories.
-
-Ask: Which source would you use to decide whether `27500` is a plausible final
-weight—the R type or the dictionary? The type can only say it is a double; the
-dictionary supplies grams and biological meaning.
+- A name alone is not a complete variable definition.
+- Ask: could the R type tell us whether `27500` is a plausible weight?
+- Answer: no; the dictionary supplies units and biological meaning.
 :::
 
 ## Checkpoint: read the representation
@@ -246,11 +323,47 @@ For the cell in row 2 under `final_weight_g`:
 - Where does its unit come from?
 
 ::: {.notes}
-Assess the whole room. One row is mouse M002; the column is post-treatment
-weight; the cell is that mouse's recorded final weight; the `_g` suffix and
-dictionary establish grams.
+- Take answers before advancing.
+- Check that row and measurement are no longer being conflated.
+:::
 
-Do not move on until row versus measurement is clear.
+## Checkpoint: read the representation
+
+For the cell in row 2 under `final_weight_g`:
+
+- What does its row represent?
+- What does its column represent?
+- What does the value represent?
+- Where does its unit come from?
+
+::: {.callout-note appearance="simple" icon=false}
+
+- **Row:** mouse M002.
+- **Column:** post-treatment weight.
+- **Cell:** M002's recorded final weight.
+- **Unit:** grams, established by `_g` and the data dictionary.
+:::
+
+::: {.notes}
+- Reveal and correct any mismatch in the room's answers.
+- Takeaway: meaning comes from table structure plus metadata.
+:::
+
+## Now in RStudio
+
+Run once in the Console:
+
+```r
+library(tidyverse)
+data(mouse_trial, package = "BIOSCI504")
+```
+
+Keep `mouse_trial` unchanged. We will build temporary pipelines from it.
+
+::: {.notes}
+- Pause while everyone loads the package data.
+- The TAs circulate; confirm that `mouse_trial` appears in the Environment.
+- The next slides contain precomputed output if anyone falls behind.
 :::
 
 ## A preview is not an inspection
@@ -270,33 +383,31 @@ It cannot establish:
 - the full range of a measurement.
 
 ::: {.notes}
-`head()` is useful, but only samples the first rows. This is why inspection
-needs checks over the complete object.
-
-Source: https://datacarpentry.github.io/R-ecology-lesson/instructor/how-r-thinks-about-data.html
+- Ask: what could be wrong in row 40 that `head()` cannot reveal?
+- Takeaway: a preview samples rows; inspection checks the complete object.
+- Source: https://datacarpentry.github.io/R-ecology-lesson/instructor/how-r-thinks-about-data.html
 :::
 
-## Always inspect
+## Inspection starts with expectations
 
-| Check | A failure it could reveal |
-|---|---|
-| dimensions | missing or extra records |
-| names and types | wrong schema or import |
-| distinct IDs | duplicated observational units |
-| missing values | incomplete measurements |
-| group counts | imbalance or miscoding |
-| ranges and units | impossible or mis-scaled values |
+| Question | Check | Concerning result |
+|---|---|---|
+| Is the table complete? | dimensions | missing or extra records |
+| Does one row equal one mouse? | distinct IDs | duplicates |
+| Are measurements present? | missingness | incomplete data |
+| Are groups represented? | counts | imbalance or miscoding |
+| Are values plausible? | ranges + units | impossible or mis-scaled values |
 
-Inspection is a set of questions, not one command.
+Inspection is a sequence of questions, not one command.
 
 ::: {.notes}
-This is the standing rule for the session. Narrate the purpose of each check.
-A long list of commands without expected behavior is not verification.
-
-Ask learners to name a result that would concern them before showing code.
+- Ask learners to state an expected result before each check.
+- Takeaway: a check is useful when a failure would change the analysis.
 :::
 
-## Inspect structure
+## Now in RStudio: inspect structure
+
+Predict what each command will tell you, then run it:
 
 ```r
 dim(mouse_trial)
@@ -304,19 +415,28 @@ names(mouse_trial)
 glimpse(mouse_trial)
 ```
 
-These answer different questions:
+::: {.notes}
+- Allow two minutes; pairs can divide the three commands.
+- Ask for dimensions and one observation about the schema.
+- Advance for the precomputed output; do not open instructor RStudio.
+:::
 
-- How large is the table?
-- Does it have the expected schema?
-- How are the variables represented?
+## Now in RStudio: inspect structure {.smaller}
+
+Predict what each command will tell you, then run it:
+
+```{r}
+#| echo: true
+
+dim(mouse_trial)
+names(mouse_trial)
+glimpse(mouse_trial)
+```
 
 ::: {.notes}
-Live-code these in RStudio. The canonical table has 48 rows and seven columns,
-but let the live output provide those values.
-
-`glimpse()` is the tidyverse counterpart to the `str()` used in the
-Carpentries source. It shows structure and sample values, not every data-quality
-condition.
+- Answer: 48 rows and seven columns.
+- Point out character identifiers/groups and double weight measurements.
+- `glimpse()` does not test every data-quality condition.
 :::
 
 ## Check the observational unit
@@ -332,15 +452,33 @@ mouse_trial |>
 What relationship do you expect between the two results?
 
 ::: {.notes}
-If one row represents one mouse, rows and distinct IDs should match. A mismatch
-does not tell you the cause; it tells you the representation needs
-investigation.
-
-Ask for the expected relationship before execution. Do not introduce the
-duplicate challenge fixture.
+- Ask for the expected relationship before students run it.
+- Allow one minute, then advance for the precomputed answer.
 :::
 
-## Check groups and missingness
+## The identifiers support the row claim
+
+```{r}
+#| echo: true
+
+mouse_trial |>
+  summarise(
+    rows = n(),
+    distinct_mice = n_distinct(mouse_id)
+  )
+```
+
+Rows equal distinct mouse IDs in this table.
+
+::: {.notes}
+- Answer: both are 48.
+- A mismatch would trigger investigation; it would not identify the cause.
+- Do not introduce the challenge fixture here.
+:::
+
+## Now in RStudio: groups and missingness
+
+Before running, predict the number of groups and what `0` would mean:
 
 ```r
 mouse_trial |>
@@ -356,15 +494,39 @@ mouse_trial |>
 ```
 
 ::: {.notes}
-Live-code or reveal the commands, but do not make learners copy every output
-into the slides before the exercise.
-
-Group counts establish the denominator. Missingness should also be checked by
-scientifically relevant groups later; an overall total can conceal a group-
-dependent problem.
+- Take predictions, then allow two minutes to run both checks.
+- Advance for the precomputed output.
 :::
 
-## Check ranges against units
+## Now in RStudio: groups and missingness
+
+Before running, predict the number of groups and what `0` would mean:
+
+```{r}
+#| echo: true
+
+mouse_trial |>
+  count(treatment)
+
+mouse_trial |>
+  summarise(
+    across(
+      c(baseline_weight_g, final_weight_g),
+      ~ sum(is.na(.x))
+    )
+  )
+```
+
+::: {.notes}
+- Group counts establish denominators before comparison.
+- There is one missing baseline weight and one missing final weight.
+- These need not occur in the same mouse; the derived change has two missing values.
+- Later checks may examine missingness within groups.
+:::
+
+## Now in RStudio: check ranges against units
+
+Predict a plausible weight range in grams, then run:
 
 ```r
 mouse_trial |>
@@ -379,11 +541,30 @@ mouse_trial |>
 The suffix `_g` makes the expected scale testable.
 
 ::: {.notes}
-The exact command is less important than comparing observed ranges with the
-dictionary and biological expectation.
+- Ask for a rough plausible range before execution.
+- Advance for the precomputed output.
+:::
 
-An R value can be a perfectly valid double and still use the wrong unit. This
-is one form of wrong-but-running data.
+## Now in RStudio: check ranges against units
+
+Predict a plausible weight range in grams, then run:
+
+```{r}
+#| echo: true
+
+mouse_trial |>
+  summarise(
+    across(
+      ends_with("_weight_g"),
+      ~ list(range(.x, na.rm = TRUE))
+    )
+  )
+```
+
+::: {.notes}
+- Compare the output with the dictionary and biological expectation.
+- A valid double can still use the wrong unit.
+- Takeaway: plausible storage is not plausible biology.
 :::
 
 ## Checkpoint: choose the revealing check
@@ -397,11 +578,30 @@ Which check is most direct?
 | final weights are missing mainly in one group | ? |
 
 ::: {.notes}
-Expected answers: compare rows with distinct IDs or inspect duplicates; inspect
-ranges/plots against documented units; count missingness within treatment.
+- Ask pairs to supply one check for each concern.
+- Require them to name the evidence each check would produce.
+:::
 
-More than one check may contribute. Ask learners to explain what evidence each
-one would provide.
+## Checkpoint: choose the revealing check
+
+Which check is most direct?
+
+| Concern | Candidate check |
+|---|---|
+| the same mouse appears twice | ? |
+| one weight uses another unit | ? |
+| final weights are missing mainly in one group | ? |
+
+::: {.callout-note appearance="simple" icon=false}
+
+- **Duplicate mouse:** compare rows with distinct IDs, then inspect duplicates.
+- **Wrong unit:** compare ranges or plots with the documented unit.
+- **Group-dependent missingness:** count missing values within treatment.
+:::
+
+::: {.notes}
+- Reveal these as defensible checks, not magic commands.
+- Takeaway: each concern should map to evidence capable of exposing it.
 :::
 
 ## The question determines the operation
@@ -425,29 +625,27 @@ Did treated mice gain more weight?
 These are different biological questions.
 
 ::: {.notes}
-This is the conceptual centrepiece. Final weight contains starting weight plus
-change during the study. Weight gain isolates the within-mouse difference.
-
-Neither question is inherently invalid. The operation must match the question
-that was specified.
+- This is the conceptual centrepiece.
+- Final weight combines starting weight and change during the study.
+- Neither target is inherently invalid; the operation must match the question.
 :::
 
-## Two analytical targets
+## Same final weight, different change
 
-```text
-final weight             final weight − baseline weight
-     │                                  │
-post-treatment level                  change during study
+```{r}
+#| echo: false
+#| fig-height: 5.2
+#| fig-alt: "Two mice both finish at 25 grams. Mouse A rises from 20 to 25 grams, while Mouse B rises from 24 to 25 grams."
+
+paired_measurement_plot
 ```
 
-A mouse can finish heavier because it started heavier, gained more, or both.
+Mouse A gained **5 g**. Mouse B gained **1 g**. Both finished at **25 g**.
 
 ::: {.notes}
-Use a verbal example: two mice can gain the same amount and finish at different
-weights because they started at different weights.
-
-Do not show the treatment-specific result. The point is the target of the
-comparison.
+- Ask: which quantity answers the study question?
+- Takeaway: paired measurements retain information the final value alone cannot.
+- This illustration does not reveal the treatment comparison.
 :::
 
 ## Valid code can answer the wrong question
@@ -466,12 +664,36 @@ mouse_trial |>
 This code runs. Which question does it actually answer?
 
 ::: {.notes}
-It compares final weight, not gain. This is the required wrong-but-running
-example: there is no syntax error, and the output can look reasonable, but it
-does not implement the stated analytical target.
+- Ask learners to name the mismatch before advancing.
+- The code is valid and its output could look reasonable.
+- Do not run or reveal the treatment means.
+:::
 
-Ask learners to name the mismatch before correcting it. Do not run or reveal
-the canonical group means.
+## Valid code can answer the wrong question
+
+Question: **Did treated mice gain more weight?**
+
+```r
+mouse_trial |>
+  group_by(treatment) |>
+  summarise(
+    n = sum(!is.na(final_weight_g)),
+    mean_final_g = mean(final_weight_g, na.rm = TRUE)
+  )
+```
+
+This code runs. Which question does it actually answer?
+
+::: {.callout-note appearance="simple" icon=false}
+
+It compares **mean final weight** between treatment groups—not weight gain.
+
+“It ran” does not establish that the code implemented the scientific question.
+:::
+
+::: {.notes}
+- Answer: it asks whether groups differ in final weight.
+- Takeaway: compare the specification with the executed operation.
 :::
 
 ## Name the quantity before coding
@@ -485,35 +707,55 @@ $$
 Expected sign: positive for gain, negative for loss.
 
 ::: {.notes}
-Start in words, then arithmetic, then an R variable name. Units remain grams
-because grams are subtracted from grams.
-
-Ask for the expected sign before showing the transformation. This gives the
-subsequent range check a scientific expectation.
+- Move from words to arithmetic to an R name.
+- Units remain grams because grams are subtracted from grams.
+- Ask for the expected sign before showing the transformation.
 :::
 
-## A derived variable is a transformation
+## Now in RStudio: derive the variable
 
 ```r
 mouse_trial |>
   mutate(
-    weight_change_g = final_weight_g - baseline_weight_g
+    weight_change_g = ____________________
   )
 ```
 
-`mutate()` returns a new table state with a new column.
+What should remain unchanged after `mutate()`?
 
 ::: {.notes}
-Live-code this without assigning it first. Let the intermediate table print so
-the transformation is visible, following the current R Ecology teaching
-sequence.
+- Give pairs one minute to complete the expression.
+- Answer: `final_weight_g - baseline_weight_g`.
+- Invariant: still 48 rows, each representing one mouse.
+:::
 
-Source: https://datacarpentry.github.io/R-ecology-lesson/instructor/working-with-data.html#making-new-columns-with-mutate
+## The derived table state {.smaller}
+
+```{r}
+#| echo: true
+
+mouse_trial |>
+  mutate(
+    weight_change_g = final_weight_g - baseline_weight_g
+  ) |>
+  select(mouse_id, baseline_weight_g, final_weight_g, weight_change_g) |>
+  slice_head(n = 6) |>
+  knitr::kable()
+```
+
+`mutate()` adds a column; it does not change what one row represents.
+
+::: {.notes}
+- Ask students to verify one subtraction from the displayed values.
+- Takeaway: inspect the new table state before continuing.
+- Source: https://datacarpentry.github.io/R-ecology-lesson/instructor/working-with-data.html#making-new-columns-with-mutate
 :::
 
 ## Inspect the new state
 
-```r
+```{r}
+#| echo: true
+
 mouse_trial |>
   mutate(
     weight_change_g = final_weight_g - baseline_weight_g
@@ -527,11 +769,9 @@ mouse_trial |>
 ```
 
 ::: {.notes}
-Build the pipeline one step at a time. Ask what each check could reveal: type
-confirms representation, missingness confirms propagation, and range checks the
-sign and scale against the biological expectation.
-
-Stop before grouping by treatment or producing the exercise comparison.
+- Ask what each check contributes: type, missingness and plausible range.
+- Stop before grouping the real changes by treatment.
+- Takeaway: inspect → transform → inspect again.
 :::
 
 ## Missing inputs propagate
@@ -545,12 +785,9 @@ final weight     baseline weight     change
 The mouse remains a row. The derived measurement is missing.
 
 ::: {.notes}
-Connect directly to Lecture 2. Arithmetic cannot reconstruct an unobserved
-input. The derived column therefore has missing values wherever either source
-measurement is missing.
-
-Do not silently delete these rows. Record how missingness changes the effective
-sample and whether it differs by treatment.
+- Connect to Lecture 2: arithmetic cannot reconstruct an unobserved input.
+- Do not silently delete these rows.
+- Record the effective sample and whether missingness differs by group.
 :::
 
 ## Checkpoint: predict the transformation
@@ -569,11 +806,37 @@ Before calculating:
 - What does the row represent after adding the column?
 
 ::: {.notes}
-Answer: positive, 1.2 g, and the row still represents the same mouse. Adding a
-derived variable changes the columns, not the observational unit.
+- Take answers before advancing.
+- Use this as a small-case test of the transformation.
+:::
 
-This is a small-case check against the transformation before it is scaled to
-the whole table.
+## Checkpoint: predict the transformation
+
+For one mouse:
+
+```text
+baseline = 24.1 g
+final    = 25.3 g
+```
+
+Before calculating:
+
+- What sign should the change have?
+- What is its value and unit?
+- What does the row represent after adding the column?
+
+::: {.callout-note appearance="simple" icon=false}
+
+- **Sign:** positive.
+- **Value:** 1.2 g.
+- **Row:** still the same mouse.
+
+Adding a derived variable changes columns, not the observational unit.
+:::
+
+::: {.notes}
+- Reveal the answer and correct sign or unit errors.
+- Transition: retain individual observations when comparing groups.
 :::
 
 ## Plot individual observations first
@@ -588,11 +851,8 @@ illustrative_outcome_plot +
 ```
 
 ::: {.notes}
-This deliberately neutral illustration avoids revealing the exercise result.
-Both groups have the same mean, but their spread is very different.
-
-Ask learners what they can see before introducing the mean: sample size,
-individual values, spread and an unusual or extreme observation.
+- Neutral illustration: both groups have the same mean but different spread.
+- Ask what is visible before the mean: sample size, values, spread and extremes.
 :::
 
 ## A summary deliberately removes detail
@@ -619,16 +879,17 @@ illustrative_outcome_plot +
 Same mean; different evidence.
 
 ::: {.notes}
-The mean retains one aspect of location and discards the individual pattern.
-It should be presented beside, not instead of, the observations.
-
-Ask what would be lost if only the two diamonds were shown.
+- Ask what is lost if only the diamonds are shown.
+- Takeaway: retain observations beside summaries.
 :::
 
-## Grouped summaries change the table
+## Predict the grouped summary
 
 ```r
-illustrative_comparison |>
+tibble(
+  comparison_group = rep(c("A", "B"), each = 5),
+  outcome = c(1, 2, 3, 4, 5, 2.8, 2.9, 3, 3.1, 3.2)
+) |>
   group_by(comparison_group) |>
   summarise(
     n = n(),
@@ -640,13 +901,33 @@ illustrative_comparison |>
 Before running: how many rows should the result contain?
 
 ::: {.notes}
-Answer: two rows, one per group. The observational unit of this summary table is
-now the group, not the individual.
+- Ask for the row count and new observational unit before advancing.
+- Do not substitute the real treatment comparison.
+:::
 
-Keep `n` beside the mean so the denominator remains visible. The same logic will
-apply in the exercise, but do not run the canonical treatment summary here.
+## Predict the grouped summary
 
-Source: https://datacarpentry.github.io/R-ecology-lesson/instructor/working-with-data.html#the-split-apply-combine-approach
+```{r}
+#| echo: true
+
+tibble(
+  comparison_group = rep(c("A", "B"), each = 5),
+  outcome = c(1, 2, 3, 4, 5, 2.8, 2.9, 3, 3.1, 3.2)
+) |>
+  group_by(comparison_group) |>
+  summarise(
+    n = n(),
+    mean = mean(outcome),
+    .groups = "drop"
+  )
+```
+
+One row now represents one group.
+
+::: {.notes}
+- Answer: two rows, one per group.
+- Keep `n` beside the mean so the denominator remains visible.
+- Source: https://datacarpentry.github.io/R-ecology-lesson/instructor/working-with-data.html#the-split-apply-combine-approach
 :::
 
 ## Uncertainty belongs with an estimate
@@ -660,13 +941,10 @@ Source: https://datacarpentry.github.io/R-ecology-lesson/instructor/working-with
 None establishes that the design, data handling or code are correct.
 
 ::: {.notes}
-Keep this statistical treatment modest. A confidence interval describes
-uncertainty around an estimate under assumptions; it is not the range containing
-95% of individual mice. A p-value is not the probability that the null
-hypothesis is true and is not a measure of biological importance.
-
-The exercise should report a difference and appropriate uncertainty, but this
-lecture does not calculate its final values.
+- Keep the statistical treatment modest.
+- A confidence interval is not the range containing 95% of mice.
+- A p-value is neither the probability of the null nor biological importance.
+- Do not calculate the exercise's final values.
 :::
 
 ## Before choosing a test, record the assumptions
@@ -679,12 +957,9 @@ lecture does not calculate its final values.
 - Are all measurements expressed in the documented unit?
 
 ::: {.notes}
-Mice share cages, so treating every row as wholly independent may be an
-approximation. Batch and cage can also contribute variation. State that without
-turning this into a mixed-model lecture.
-
-The test choice follows the question, design and observed data. It does not
-replace inspection.
+- Shared cages can challenge a simple independence assumption.
+- Cage and batch may contribute variation; do not turn this into a mixed-model lecture.
+- Test choice follows the question, design and observed data.
 :::
 
 ## Visualization is verification evidence
@@ -700,14 +975,11 @@ A plot can reveal:
 The figure should be checked before it is interpreted.
 
 ::: {.notes}
-The plot is not decoration added after the statistics. It is both an analytical
-result and a diagnostic artifact.
-
-In the exercise, students should show individual observations and a restrained
-summary, then check that the figure agrees with their numerical result.
+- A plot is an analytical result and a diagnostic artifact.
+- In the exercise, retain observations and check agreement with numerical results.
 :::
 
-## Checkpoint: what does the summary row represent?
+## Checkpoint: what does the summary row represent? {.smaller}
 
 After `group_by(treatment)` and `summarise()`:
 
@@ -716,12 +988,39 @@ After `group_by(treatment)` and `summarise()`:
 3. Which feature of the individual data can the mean conceal?
 4. Which assumption could shared cages challenge?
 
-::: {.notes}
-Answers: one row represents one treatment group; `n` gives the number of rows or
-usable values as defined; a mean can conceal spread, overlap, clusters or
-outliers; shared cages can challenge simple independence.
+::: {.callout-note appearance="simple" icon=false style="visibility: hidden;"}
 
-Use the answers to decide whether the class is ready for the exercise.
+1. One row represents one treatment group—not one mouse.
+2. `n` records the denominator used by the summary.
+3. A mean can conceal spread, overlap, clusters or outliers.
+4. Shared cages can challenge simple independence.
+:::
+
+::: {.notes}
+- Take answers before advancing.
+- Use the response to decide whether the class is ready for the exercise.
+:::
+
+## Checkpoint: what does the summary row represent? {.smaller}
+
+After `group_by(treatment)` and `summarise()`:
+
+1. Does one row still represent one mouse?
+2. What does `n` establish?
+3. Which feature of the individual data can the mean conceal?
+4. Which assumption could shared cages challenge?
+
+::: {.callout-note appearance="simple" icon=false}
+
+1. One row represents one treatment group—not one mouse.
+2. `n` records the denominator used by the summary.
+3. A mean can conceal spread, overlap, clusters or outliers.
+4. Shared cages can challenge simple independence.
+:::
+
+::: {.notes}
+- Reveal each answer and correct the observational-unit language first.
+- Takeaway: summaries change representation and remove detail.
 :::
 
 ## Result is not interpretation
@@ -749,11 +1048,8 @@ Use the answers to decide whether the class is ready for the exercise.
 ::::
 
 ::: {.notes}
-Write the numerical and visual result before supplying a biological story. This
-makes it easier to see where observation ends and explanation begins.
-
-Avoid causal language beyond what the treatment assignment and experimental
-design support.
+- Write the numerical and visual result before the biological explanation.
+- Avoid causal language beyond the design.
 :::
 
 ## The design limits the claim
@@ -773,9 +1069,8 @@ It does not automatically establish:
 - generality beyond the studied mice and conditions.
 
 ::: {.notes}
-The limits are properties of the design and recorded evidence, not a ritual
-disclaimer. Ask which additional data or design feature would change a
-particular conclusion.
+- Treat limits as properties of the design, not a ritual disclaimer.
+- Ask what additional evidence would change one conclusion.
 :::
 
 ## Why I trust this
@@ -792,10 +1087,9 @@ particular conclusion.
 Trust points to evidence. Remaining doubt should also be recorded.
 
 ::: {.notes}
-This language mirrors the final exercise section. Evidence is specific and
-inspectable. “I checked carefully” is not evidence.
-
-Ask for one remaining doubt even after every listed check passes.
+- Evidence must be specific and inspectable.
+- “I checked carefully” is not evidence.
+- Ask for one remaining doubt after every listed check passes.
 :::
 
 ## AI can explain one step
@@ -816,12 +1110,9 @@ Generated code can reduce typing. The question, context, output and assumptions
 still require scientific evaluation.
 
 ::: {.notes}
-This matches the exercise's “Explain or debug with AI” section. The prompt is
-consequential but bounded; it does not outsource the complete analysis.
-
-Keep the original command and output beside the response. Check the explanation
-with R. Use the institutionally provided Teams Copilot and do not send sensitive
-data to an unapproved service.
+- Keep this bounded to explanation or debugging.
+- Retain the command and output beside the AI response; check the explanation with R.
+- Use Teams Copilot; do not send sensitive data to an unapproved service.
 :::
 
 ## The exercise follows the same reasoning sequence
@@ -841,11 +1132,9 @@ Situation
 ```
 
 ::: {.notes}
-This is a map, not a solution. Point out that the exercise deliberately asks for
-both final weight and change so students can explain why the questions differ.
-
-The analysis specification comes before the group result. AI may explain or
-debug a bounded step, but the Quarto document remains the executable record.
+- This is a map, not a solution.
+- The exercise asks about final weight and change so students can distinguish the targets.
+- The Quarto document remains the executable record.
 :::
 
 ## Begin with the question
@@ -866,12 +1155,9 @@ Start with:
 Do not begin by requesting the complete analysis from AI.
 
 ::: {.notes}
-If the template is not present, run
-`BIOSCI504::copy_template("lecture-3")` from the course Project. Do not
-overwrite an existing exercise directory.
-
-Give students time to read the Situation and commit to a prediction before they
-see the comparison.
+- If needed: `BIOSCI504::copy_template("lecture-3")` from the course Project.
+- Do not overwrite an existing exercise directory.
+- Give students time to commit to a prediction before comparison.
 :::
 
 ## Questions
@@ -879,8 +1165,8 @@ see the comparison.
 Then move into the `tabular-comparison` exercise.
 
 ::: {.notes}
-Take questions that affect the reasoning sequence. Defer workstation-specific
-troubleshooting to individual assistance during the exercise.
+- Take questions about the reasoning sequence.
+- Handle workstation-specific problems individually during the exercise.
 :::
 
 # Further reading {.smaller}
@@ -897,6 +1183,5 @@ Copyright © The Carpentries, [CC BY 4.0](https://creativecommons.org/licenses/b
 Changes were made for BIOSCI 504; no endorsement is implied.
 
 ::: {.notes}
-The executable table sample and dictionary excerpt use the public BIOSCI504
-package at the commit recorded in the deck source and README.
+- Tables and figures use the public `BIOSCI504` package commit recorded in the source.
 :::
