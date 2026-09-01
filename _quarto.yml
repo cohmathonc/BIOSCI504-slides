@@ -4,6 +4,7 @@ project:
   render:
     - index.qmd
     - lecture-2.qmd
+    - lecture-3.qmd
 
 website:
   title: "BIOSCI 504"
@@ -11,6 +12,8 @@ website:
     left:
       - href: lecture-2.qmd
         text: "Lecture 2"
+      - href: lecture-3.qmd
+        text: "Lecture 3"
 
 format:
   html:
@@ -18,4 +21,3 @@ format:
       - cosmo
       - brand
     toc: true
-

@@ -6,4 +6,4 @@ subtitle: "Course presentations"
 ## Day 2
 
 - [Lecture 2: Working with R and RStudio](lecture-2.qmd)
-
+- [Lecture 3: From experiment to trustworthy comparison](lecture-3.qmd)
