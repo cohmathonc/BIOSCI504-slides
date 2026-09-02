@@ -3,17 +3,20 @@ project:
   output-dir: _site
   render:
     - index.qmd
-    - lecture-2.qmd
-    - lecture-3.qmd
+    - r-and-rstudio.qmd
+    - experimental-data.qmd
+    - logical-operations.qmd
 
 website:
   title: "BIOSCI 504"
   navbar:
     left:
-      - href: lecture-2.qmd
-        text: "Lecture 2"
-      - href: lecture-3.qmd
-        text: "Lecture 3"
+      - href: r-and-rstudio.qmd
+        text: "R and RStudio"
+      - href: experimental-data.qmd
+        text: "Experimental data"
+      - href: logical-operations.qmd
+        text: "Logical operations"
 
 format:
   html:

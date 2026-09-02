@@ -1,0 +1,580 @@
+---
+title: "Logical operations"
+subtitle: "Comparisons, conditions, and filtering"
+author: "Denis O'Meally"
+institute: "City of Hope"
+format:
+  revealjs:
+    theme:
+      - default
+      - brand
+    slide-number: c/t
+    transition: none
+    controls: true
+    progress: true
+    hash: true
+    history: true
+    center: false
+    width: 1600
+    height: 900
+    margin: 0.08
+    code-overflow: wrap
+    embed-resources: true
+    footer: "BIOSCI 504 · Logical operations"
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+library(BIOSCI504)
+library(tidyverse)
+data(mouse_trial)
+
+trial <- mouse_trial |>
+  as_tibble() |>
+  mutate(weight_change_g = final_weight_g - baseline_weight_g)
+
+trial_with_missing_check <- trial |>
+  mutate(
+    missing_required_weight = is.na(baseline_weight_g) |
+      is.na(final_weight_g)
+  )
+
+complete_mouse_records <- trial_with_missing_check |>
+  filter(!missing_required_weight)
+
+mouse_conditions <- complete_mouse_records |>
+  mutate(
+    received_treatment = treatment == "treatment",
+    gained_at_least_3_g = weight_change_g >= 3,
+    meets_both_conditions = received_treatment & gained_at_least_3_g
+  )
+```
+
+## By the end
+
+You should be able to:
+
+1. recognise that comparisons return `TRUE`, `FALSE`, or `NA`;
+2. identify missing measurements and combine logical conditions;
+3. use a logical condition to filter rows and inspect the selected IDs;
+4. use one logical value in a simple `if`/`else` decision;
+5. recognise how a working filter can become a small function; and
+6. follow a supplied loop that repeats the filter.
+
+::: {.notes}
+- Use these outcomes as the roadmap for the session.
+- Comparisons, a simple conditional, and filtering are the core exercise.
+- The function and loop briefly reuse the same filter.
+:::
+
+## Mouse trial
+
+### Which treated mice gained at least 3 g?
+
+We need three columns:
+
+- `mouse_id`
+- `treatment`
+- `weight_change_g`
+
+::: {.notes}
+- Resume the experiment from Day 2; one row represents one mouse.
+- The 3 g threshold is an example used to make the R operations concrete.
+- No treatment-effect conclusion is being made from this filter.
+:::
+
+## Weight change
+
+### Which measurements are required?
+
+```{r}
+#| echo: true
+trial |>
+  select(
+    mouse_id,
+    treatment,
+    baseline_weight_g,
+    final_weight_g,
+    weight_change_g
+  ) |>
+  slice(c(8, 12, 31, 37))
+```
+
+An unavailable baseline or final weight produces an unavailable change.
+
+::: {.notes}
+- M012 lacks a baseline measurement and M031 lacks a final measurement.
+- `weight_change_g` is `NA` for both records because subtraction requires two values.
+- The next step identifies these rows explicitly.
+:::
+
+## Missing values
+
+### Which records are missing a required weight?
+
+```{r}
+#| echo: true
+trial_with_missing_check <- trial |>
+  mutate(
+    missing_required_weight = is.na(baseline_weight_g) |
+      is.na(final_weight_g)
+  )
+
+trial_with_missing_check |>
+  select(
+    mouse_id,
+    baseline_weight_g,
+    final_weight_g,
+    missing_required_weight
+  ) |>
+  slice(c(8, 12, 31, 37))
+```
+
+`|` means logical **OR**. The result is `TRUE` when either condition is true.
+
+::: {.notes}
+- `is.na()` returns one logical value for each measurement.
+- OR combines the baseline-missing and final-missing conditions.
+- Source: https://stat.ethz.ch/R-manual/R-devel/library/base/html/Logic.html
+:::
+
+## Filtering rows
+
+### How do we keep records with both weights?
+
+```{r}
+#| echo: true
+complete_mouse_records <- trial_with_missing_check |>
+  filter(!missing_required_weight)
+
+complete_mouse_records |>
+  summarise(rows = n())
+```
+
+`!` means logical **NOT**. It reverses `TRUE` and `FALSE`.
+
+`filter()` retains `TRUE` rows. Rows with `FALSE` or `NA` are not retained.
+
+::: {.notes}
+- NOT reverses the missingness condition, leaving 46 complete records.
+- `filter()` retains rows for which the supplied condition is `TRUE`.
+- Source: https://dplyr.tidyverse.org/reference/filter.html
+:::
+
+## Comparisons
+
+### What does “at least 3 g” return?
+
+```r
+c(2.5, 3.0, 3.5, NA) >= 3
+```
+
+| Weight change | Result |
+|---:|:---|
+| 2.5 g | ? |
+| 3.0 g | ? |
+| 3.5 g | ? |
+| unavailable | ? |
+
+::: {.notes}
+- Ask for the four results before revealing the next slide.
+- Pay particular attention to exactly 3.0 g and the unavailable value.
+- Keep this slide visible long enough for students to commit to an answer.
+:::
+
+## Comparisons
+
+### What does “at least 3 g” return?
+
+```{r}
+#| echo: true
+c(2.5, 3.0, 3.5, NA) >= 3
+```
+
+| Weight change | Result |
+|---:|:---|
+| 2.5 g | `FALSE` |
+| 3.0 g | `TRUE` |
+| 3.5 g | `TRUE` |
+| unavailable | `NA` |
+
+::: {.notes}
+- `>=` means greater than or equal to, corresponding to “at least.”
+- An unavailable value produces an unavailable comparison result.
+- Source: https://stat.ethz.ch/R-manual/R-devel/library/base/html/Comparison.html
+:::
+
+## Comparisons
+
+### Does exactly 3.0 g meet the condition?
+
+```{r}
+#| echo: true
+3 > 3
+3 >= 3
+3 < 3
+3 <= 3
+```
+
+“At least 3.0 g” translates to `>= 3`.
+
+::: {.notes}
+- `>` means greater than; `>=` means greater than or equal to.
+- `<` means less than; `<=` means less than or equal to.
+- All four expressions run, but only `>= 3` matches the stated condition.
+- This is the one-character error students should be able to recognize later.
+:::
+
+## Conditional execution
+
+### Which branch will run?
+
+```r
+weight_change_g <- 3
+
+if (weight_change_g >= 3) {
+  "include"
+} else {
+  "exclude"
+}
+```
+
+What will R return?
+
+::: {.notes}
+- Ask for a prediction before revealing the next slide.
+- The comparison produces the single logical value used by `if`.
+:::
+
+## Conditional execution
+
+### Which branch will run?
+
+```{r}
+#| echo: true
+weight_change_g <- 3
+
+if (weight_change_g >= 3) {
+  "include"
+} else {
+  "exclude"
+}
+```
+
+`if` evaluates one logical value and runs one branch.
+
+::: {.notes}
+- The condition is `TRUE`, so R returns `"include"`.
+- This example makes one decision about one value.
+- `filter()` applies a logical condition across table rows.
+:::
+
+## Comparing text
+
+### Which complete mice received treatment?
+
+```{r}
+#| echo: true
+mouse_conditions <- complete_mouse_records |>
+  mutate(
+    received_treatment = treatment == "treatment"
+  )
+
+mouse_conditions |>
+  count(treatment, received_treatment)
+```
+
+`==` means **equal to**. `!=` means **not equal to**.
+
+::: {.notes}
+- The comparison is performed once for every row.
+- The output is a logical column containing `TRUE` or `FALSE`.
+- Character comparisons require the exact stored treatment label.
+:::
+
+## Comparing numbers
+
+### Which complete mice gained at least 3 g?
+
+```{r}
+#| echo: true
+mouse_conditions <- mouse_conditions |>
+  mutate(
+    gained_at_least_3_g = weight_change_g >= 3
+  )
+
+mouse_conditions |>
+  count(gained_at_least_3_g)
+```
+
+The comparison is now attached to each complete mouse record.
+
+::: {.notes}
+- There are five complete records with gains of at least 3 g.
+- The treatment condition has not yet been applied.
+- The next step combines the two logical columns.
+:::
+
+## Combining conditions
+
+### When is AND true?
+
+| `mouse_id` | Received treatment? | Gained at least 3 g? | Both? |
+|:---|:---:|:---:|:---:|
+| M001 | `TRUE` | `FALSE` | ? |
+| M008 | `TRUE` | `TRUE` | ? |
+| M048 | `FALSE` | `FALSE` | ? |
+
+```r
+received_treatment & gained_at_least_3_g
+```
+
+::: {.notes}
+- Ask students to fill the final column before revealing it.
+- AND returns true only when the two input conditions are both true.
+- M008 is the only displayed row expected to pass both conditions.
+:::
+
+## Combining conditions
+
+### When is AND true?
+
+| `mouse_id` | Received treatment? | Gained at least 3 g? | Both? |
+|:---|:---:|:---:|:---:|
+| M001 | `TRUE` | `FALSE` | `FALSE` |
+| M008 | `TRUE` | `TRUE` | `TRUE` |
+| M048 | `FALSE` | `FALSE` | `FALSE` |
+
+```r
+received_treatment & gained_at_least_3_g
+```
+
+`&` means logical **AND**.
+
+::: {.notes}
+- Compare each revealed result with the two input columns.
+- `&` is element-wise, so each row receives its own result.
+- The same operation is applied to all 46 complete records next.
+:::
+
+## Combining conditions
+
+### How many complete records meet both?
+
+```{r}
+#| echo: true
+mouse_conditions <- mouse_conditions |>
+  mutate(
+    meets_both_conditions = received_treatment &
+      gained_at_least_3_g
+  )
+
+mouse_conditions |>
+  count(meets_both_conditions)
+```
+
+Five complete records meet both conditions.
+
+::: {.notes}
+- The two component columns were inspected before they were combined.
+- The combined logical column remains attached to the source records.
+- Five `TRUE` values predict five rows after filtering.
+:::
+
+## Filtering rows
+
+### Which mice meet both conditions?
+
+```{r}
+#| echo: true
+treated_mice_meeting_gain_threshold <- mouse_conditions |>
+  filter(meets_both_conditions) |>
+  select(mouse_id, treatment, weight_change_g)
+
+treated_mice_meeting_gain_threshold
+```
+
+The output contains five rows and five mouse IDs.
+
+::: {.notes}
+- `filter()` uses the logical column to retain the five `TRUE` rows.
+- Ask students to reconcile the row count with the preceding count table.
+- IDs make the selected records traceable to the source data.
+:::
+
+## Functions
+
+### Which parts of the filter can change?
+
+```r
+mouse_data |>
+  dplyr::filter(
+    treatment == "treatment",
+    weight_change_g >= minimum_weight_gain_g
+  )
+```
+
+The data and the minimum gain are the two inputs that can change.
+
+`dplyr::filter()` explicitly identifies the tidyverse function.
+
+::: {.notes}
+- Point to `mouse_data` and `minimum_weight_gain_g`; these become function arguments.
+- The two filter conditions are the same conditions already examined.
+- Avoid introducing additional function terminology on this slide.
+:::
+
+## Functions
+
+### How do we give the filter a reusable name?
+
+```{r}
+#| echo: true
+filter_treated_mice_by_weight_gain <- function(
+  mouse_data,
+  minimum_weight_gain_g
+) {
+  mouse_data |>
+    dplyr::filter(
+      treatment == "treatment",
+      weight_change_g >= minimum_weight_gain_g
+    )
+}
+```
+
+::: {.notes}
+- The function receives a mouse table and a minimum gain, then returns a filtered table.
+- Ask students to locate the familiar filter inside the function.
+- Do not read the function line by line; the new idea is giving the operation inputs and a name.
+:::
+
+## Functions
+
+### Does it reproduce the five-row result?
+
+```{r}
+#| echo: true
+filter_treated_mice_by_weight_gain(
+  trial,
+  minimum_weight_gain_g = 3
+) |>
+  select(mouse_id, treatment, weight_change_g)
+```
+
+The call reproduces the five-row result.
+
+::: {.notes}
+- Connect the two supplied arguments with the two function inputs.
+- The returned table should match the earlier direct filter.
+- This agreement is the only function check needed here.
+:::
+
+## Iteration
+
+### What happens when the filter is repeated?
+
+```r
+for (minimum_weight_gain_g in c(2, 3, 4)) {
+  selected_mice <- filter_treated_mice_by_weight_gain(
+    trial,
+    minimum_weight_gain_g
+  )
+
+  print(nrow(selected_mice))
+}
+```
+
+How many times will the body run? What should happen to the row count?
+
+::: {.notes}
+- The loop body runs three times, once for each value in the vector.
+- Ask whether a larger minimum gain should select more or fewer mice.
+- Students are expected to follow this supplied pattern, not reproduce it from memory.
+:::
+
+## Iteration
+
+### What happens when the filter is repeated?
+
+```{r}
+#| echo: true
+for (minimum_weight_gain_g in c(2, 3, 4)) {
+  selected_mice <- filter_treated_mice_by_weight_gain(
+    trial,
+    minimum_weight_gain_g
+  )
+
+  print(nrow(selected_mice))
+}
+```
+
+::: {.notes}
+- The observed counts are 21, 5, and 1 for minimum gains of 2, 3, and 4 g.
+- Increasing the minimum gain makes the filter more restrictive for these data.
+- The loop repeats one known operation; no new analytical rule is introduced.
+:::
+
+## Hands-on exercise
+
+### How do you open the exercise?
+
+In the BIOSCI504 course Project, run:
+
+```r
+BIOSCI504::copy_template("explicit-analytical-rules")
+```
+
+Then open:
+
+```text
+exercises/explicit-analytical-rules/analysis.qmd
+```
+
+::: {.notes}
+- If the directory already exists, students should open it without overwriting their work.
+- The exercise will follow the same comparison, combination, and filtering sequence.
+- The TAs will circulate during the hands-on work.
+:::
+
+## Hands-on exercise
+
+### What will you do?
+
+You will:
+
+1. inspect the relevant mouse-trial columns;
+2. create and inspect logical conditions;
+3. filter the treated mice meeting the gain threshold;
+4. complete the small filtering function; and
+5. run the supplied loop at three thresholds.
+
+Restart R or RStudio, render again, and inspect `analysis.html`.
+
+::: {.notes}
+- The core task is the logical filter; the function and loop reuse it with support.
+- Students should keep `mouse_id` beside intermediate and final results.
+- A clean render confirms that the document contains the objects it uses.
+:::
+
+## Questions
+
+::: {.notes}
+- Address questions about operators, logical values, or filtering before the exercise begins.
+- Function or loop syntax can be revisited with the TAs during the supported exercise.
+:::
+
+# Further reading {.smaller}
+
+- [R comparisons](https://stat.ethz.ch/R-manual/R-devel/library/base/html/Comparison.html)
+- [R logical operators](https://stat.ethz.ch/R-manual/R-devel/library/base/html/Logic.html)
+- [`is.na()` and missing values](https://stat.ethz.ch/R-manual/R-devel/library/base/html/NA.html)
+- [`dplyr::filter()`](https://dplyr.tidyverse.org/reference/filter.html)
+- [Software Carpentry: Functions](https://swcarpentry.github.io/r-novice-gapminder/instructor/10-functions.html)
+- [Software Carpentry: Repeating operations](https://swcarpentry.github.io/r-novice-gapminder/instructor/07-control-flow.html#repeating-operations)
+- [`BIOSCI504` package](https://github.com/cohmathonc/BIOSCI504)

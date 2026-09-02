@@ -5,5 +5,9 @@ subtitle: "Course presentations"
 
 ## Day 2
 
-- [Lecture 2: Working with R and RStudio](lecture-2.qmd)
-- [Lecture 3: Working with experimental data in R](lecture-3.qmd)
+- [Working with R and RStudio](r-and-rstudio.qmd)
+- [Working with experimental data in R](experimental-data.qmd)
+
+## Day 3
+
+- [Logical operations in R](logical-operations.qmd)
