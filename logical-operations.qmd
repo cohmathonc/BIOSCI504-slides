@@ -236,9 +236,9 @@ c(2.5, 3.0, 3.5, NA) >= 3
 ### Which branch will run?
 
 ```r
-weight_change_g <- 3
+current_weight_change_g <- 3
 
-if (weight_change_g >= 3) {
+if (current_weight_change_g >= 3) {
   "include"
 } else {
   "exclude"
@@ -258,9 +258,9 @@ What will R return?
 
 ```{r}
 #| echo: true
-weight_change_g <- 3
+current_weight_change_g <- 3
 
-if (weight_change_g >= 3) {
+if (current_weight_change_g >= 3) {
   "include"
 } else {
   "exclude"
@@ -410,23 +410,23 @@ The output contains five rows and five mouse IDs.
 
 ## Functions
 
-### Which parts of the filter can change?
+### Which operation do we want to reuse?
 
 ```r
-mouse_data |>
+mouse_trial |>
   dplyr::filter(
     treatment == "treatment",
-    weight_change_g >= minimum_weight_gain_g
+    weight_change_g >= 3
   )
 ```
 
-The data and the minimum gain are the two inputs that can change.
+This is the filter we have already used.
 
 `dplyr::filter()` explicitly identifies the tidyverse function.
 
 ::: {.notes}
-- Point to `mouse_data` and `minimum_weight_gain_g`; these become function arguments.
-- The two filter conditions are the same conditions already examined.
+- Re-establish the familiar operation before adding function syntax.
+- The next slide turns the table and minimum gain into function inputs.
 - Avoid introducing additional function terminology on this slide.
 :::
 
