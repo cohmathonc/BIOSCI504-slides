@@ -35,11 +35,11 @@ library(BIOSCI504)
 library(tidyverse)
 data(mouse_trial)
 
-trial <- mouse_trial |>
+mouse_trial <- mouse_trial |>
   as_tibble() |>
   mutate(weight_change_g = final_weight_g - baseline_weight_g)
 
-trial_with_missing_check <- trial |>
+trial_with_missing_check <- mouse_trial |>
   mutate(
     missing_required_weight = is.na(baseline_weight_g) |
       is.na(final_weight_g)
@@ -95,7 +95,7 @@ We need three columns:
 
 ```{r}
 #| echo: true
-trial |>
+mouse_trial |>
   select(
     mouse_id,
     treatment,
@@ -120,7 +120,7 @@ An unavailable baseline or final weight produces an unavailable change.
 
 ```{r}
 #| echo: true
-trial_with_missing_check <- trial |>
+trial_with_missing_check <- mouse_trial |>
   mutate(
     missing_required_weight = is.na(baseline_weight_g) |
       is.na(final_weight_g)
@@ -461,7 +461,7 @@ filter_treated_mice_by_weight_gain <- function(
 ```{r}
 #| echo: true
 filter_treated_mice_by_weight_gain(
-  trial,
+  mouse_trial,
   minimum_weight_gain_g = 3
 ) |>
   select(mouse_id, treatment, weight_change_g)
@@ -482,7 +482,7 @@ The call reproduces the five-row result.
 ```r
 for (minimum_weight_gain_g in c(2, 3, 4)) {
   selected_mice <- filter_treated_mice_by_weight_gain(
-    trial,
+    mouse_trial,
     minimum_weight_gain_g
   )
 
@@ -506,7 +506,7 @@ How many times will the body run? What should happen to the row count?
 #| echo: true
 for (minimum_weight_gain_g in c(2, 3, 4)) {
   selected_mice <- filter_treated_mice_by_weight_gain(
-    trial,
+    mouse_trial,
     minimum_weight_gain_g
   )
 
